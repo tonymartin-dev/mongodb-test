@@ -1,18 +1,22 @@
+//import { afterFind, afterWrite } from './after-queries';
 const MongoClient = require('mongodb').MongoClient;
+const afterQueries = require('./after-queries');
 
 // replace the uri string with your connection string.
 const uri = 'mongodb+srv://accesoDB:chachiwachi@test-ut0wm.gcp.mongodb.net/test?retryWrites=true'
 MongoClient.connect(uri, { useNewUrlParser: true }, function(err, client) {
 
+   //Error management
    if(err) {
-        console.log('Error occurred...\n',err);
+      console.log('Error occurred...\n',err);
    }
+
    console.log('Connected...');
 
-   const db = client.db("forum")
-
-   const Posts = db.collection('posts')
-   const Comments = db.collection('comments')
+   //DB and collections
+   const db = client.db("forum");
+   const Posts = db.collection('posts');
+   const Comments = db.collection('comments');
 
    const add2 = async (number) => {
 
@@ -35,53 +39,27 @@ MongoClient.connect(uri, { useNewUrlParser: true }, function(err, client) {
 
    const allPosts = async () => {
       let response = await Posts.find();
-      console.log('>RESPONSE: ');
-      console.log(response);
-      
-      while(await response.hasNext()){
-         console.log('> POST: ');
-         let document = await response.next();
-         console.log(document);
-      }
       return response;
    }
 
    console.log('Getting all posts as an Array using toArray()')
    allPosts().then(
-      res => {
-         const getPosts = async () => {
-            console.log('> POSTS ARRAY: ');
-            var documents = await res.toArray();
-            console.log(documents);
-            //client.close();
-         }
-         getPosts();
+      postsResponse => {
+         afterQueries.afterFind(postsResponse).then(awaitResponse => {
+            //console.log('toArray await' + awaitResponse)
+         });
       },
-      err => {
-         console.log('> ERROR: ', err);
-         //client.close();
-      }
+      err => console.log('> ERROR: ', err)
    );
 
    console.log('Getting all posts throught a loop using .next()')
-   /*allPosts().then(
-      res => {
-         const getPosts = async () => {
-            while(res.hasNext()){
-               console.log('> POST: ');
-               let document = await res.next();
-               console.log(document);
-            }
-         }
-         getPosts();
-         //client.close();
+   allPosts().then(
+      postsResponse => {
+         afterQueries.afterFindNext(postsResponse).then(awaitResponse => {
+            //console.log('next await' + awaitResponse)
+         });
       },
-      err => {
-         console.log('> ERROR: ', err);
-         //client.close();
-      }
-   );*/
-
-   //console.log('> POSTS: ', postsList)
+      err => console.log('> ERROR: ', err)
+   );
    
 });
